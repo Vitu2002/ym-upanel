@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./db.sqlite"
+}
+
+model User {
+  id       String @id @default(cuid())
+  api_id   Int    @unique
+  email    String @unique
+  username String
+  token    String @unique
+}
+
+model Queue {
+  id          String       @id @default(cuid())
+  api_id      Int?
+  path        String
+  status      UploadStatus @default(PENDING)
+  title       String
+  slug        String
+  cover       String?
+  chapters    Chapter[]
+  errors      Errors[]
+  added_at    DateTime     @default(now())
+  started_at  DateTime?
+  finished_at DateTime?
+  bytes       Int          @default(0)
+}
+
+model Chapter {
+  id          String       @id @default(cuid())
+  api_id      Int?
+  queue_id    String
+  queue       Queue        @relation(fields: [queue_id], references: [id], onDelete: Cascade)
+  status      UploadStatus @default(PENDING)
+  chapter     Int
+  title       String?
+  volume      Int?
+  path        String
+  added_at    DateTime     @default(now())
+  started_at  DateTime?
+  finished_at DateTime?
+  bytes       Int          @default(0)
+  errors      Errors[]
+}
+
+model Errors {
+  id         Int     @id @default(autoincrement())
+  queue_id   String
+  queue      Queue   @relation(fields: [queue_id], references: [id], onDelete: Cascade)
+  chapter_id String
+  chapter    Chapter @relation(fields: [chapter_id], references: [id], onDelete: Cascade)
+  message    String
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
